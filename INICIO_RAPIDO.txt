@@ -1,0 +1,135 @@
+INICIO RAPIDO - AGENTE DGSP HERMOSILLO
+======================================
+
+PASO 1: Descargar tu clave API de Groq
+--------------------------------------
+
+1. Ve a https://console.groq.com
+2. Crea una cuenta o inicia sesión
+3. Ve a "API Keys"
+4. Copia tu API key
+
+PASO 2: Configurar el archivo .env
+-----------------------------------
+
+Abre el archivo ".env" con un editor de texto y reemplaza:
+
+    GROQ_API_KEY=tu_clave_aqui
+
+Con tu clave real. Ejemplo:
+
+    GROQ_API_KEY=gsk_1a2b3c4d5e6f7g8h9i0j
+
+
+PASO 3: Verificar que tengas todo
+----------------------------------
+
+Ejecuta este comando para verificar:
+
+    python test_setup.py
+
+Debe mostrar [OK] en todo. Si falta algo, instala:
+
+    pip install -r requirements.txt
+
+
+PASO 4: Ejecutar el agente
+--------------------------
+
+Linux/Mac:
+    bash start.sh
+
+Windows (PowerShell):
+    python dgsp_agent.py
+
+O simplemente:
+    python dgsp_agent.py
+
+
+PASO 5: Hacer preguntas
+-----------------------
+
+Una vez dentro del chatbot:
+
+    Tú: ¿Cuál es la estructura de la DGSP?
+    
+    [El agente responde basado en el manual]
+    
+    Tú: ¿Cuáles son los departamentos?
+    
+    [Responde con contexto previo]
+    
+    Tú: historial
+    
+    [Muestra el historial de la conversación]
+    
+    Tú: salir
+    
+    [Cierra el agente]
+
+
+PROBLEMA: "GROQ_API_KEY not configured"
+-----------------------------------------
+
+Solución:
+1. Verifica que .env existe en la carpeta raíz
+2. Verifica que tiene tu clave correctamente
+3. Reinicia la terminal
+4. Intenta de nuevo
+
+
+PROBLEMA: "PDF not found"
+--------------------------
+
+Solución:
+1. El archivo debe llamarse "manual_dgsp.pdf"
+2. Debe estar en la carpeta raíz
+3. Verifica la ruta con: ls -la *.pdf
+
+
+PROBLEMA: "ModuleNotFoundError"
+--------------------------------
+
+Solución:
+1. Ejecuta: pip install -r requirements.txt
+2. Asegúrate de tener Python 3.10+
+
+
+USAR EN TU CODIGO
+-----------------
+
+from dgsp_agent import DGSPAgent
+
+# Crear agente
+agent = DGSPAgent(
+    pdf_path="./manual_dgsp.pdf",
+    session_id="user_123"
+)
+
+# Hacer pregunta
+respuesta = agent.ask("¿Qué es la DGSP?")
+print(respuesta)
+
+# Ver historial
+agent.show_history()
+
+
+SIGUIENTES PASOS RECOMENDADOS
+------------------------------
+
+1. Prueba hacer varias preguntas para ver cómo responde
+2. Revisa el archivo GUIA_EDUCATIVA.md para entender cómo funciona
+3. Experimenta con el código en Python para customizarlo
+4. Agrega más PDFs o ajusta los parámetros
+
+
+CONTACTO / DUDAS
+-----------------
+
+Si tienes dudas sobre:
+- Cómo funciona: Lee GUIA_EDUCATIVA.md
+- Cómo configurar: Lee README.md
+- El código: Revisa los comentarios en los .py
+- Groq API: Visita https://console.groq.com/docs
+
+¡Listo! Ya puedes empezar a usar el agente.

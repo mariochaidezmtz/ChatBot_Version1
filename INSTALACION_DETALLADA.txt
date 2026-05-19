@@ -1,0 +1,348 @@
+INSTALACION PASO A PASO - AGENTE DGSP
+=====================================
+
+Si recibiste error de dependencias, sigue estos pasos exactos.
+
+PASO 0: VERIFICAR PYTHON
+========================
+
+Abre una terminal y ejecuta:
+
+    python --version
+
+Debes ver algo como:
+    Python 3.10.x o mayor
+
+Si tienes Python 2 o versión menor a 3.10, descarga la última desde:
+    https://www.python.org/downloads/
+
+Windows: Asegúrate de marcar "Add Python to PATH" durante instalación
+
+
+PASO 1: CONFIGURAR .env
+=======================
+
+1. Abre el archivo ".env" con tu editor de texto
+
+2. Reemplaza esto:
+       GROQ_API_KEY=tu_clave_api_aqui
+
+   Con tu clave real (sin comillas). Ejemplo:
+       GROQ_API_KEY=gsk_abcd1234efgh5678ijkl
+
+3. Guarda el archivo
+
+4. En terminal, verifica que existe:
+       cat .env    (Linux/Mac)
+       type .env   (Windows)
+
+
+PASO 2: INSTALAR DEPENDENCIAS (opción A - automática)
+======================================================
+
+Linux o Mac:
+
+    bash run.sh
+
+Este script hace todo automáticamente:
+- Crea entorno virtual
+- Instala pip
+- Instala dependencias
+- Verifica configuración
+- Inicia el agente
+
+Windows (en PowerShell como administrador):
+
+    python run.py
+
+O manualmente (ver opción B)
+
+
+PASO 3: INSTALAR DEPENDENCIAS (opción B - manual)
+==================================================
+
+Si prefieres instalación manual:
+
+1. Crear entorno virtual:
+
+       python -m venv venv
+
+2. Activar entorno:
+
+   Linux/Mac:
+       source venv/bin/activate
+   
+   Windows (CMD):
+       venv\Scripts\activate
+   
+   Windows (PowerShell):
+       .\venv\Scripts\Activate.ps1
+
+   Debes ver algo como:
+       (venv) usuario@computadora:~$
+
+3. Actualizar pip:
+
+       python -m pip install --upgrade pip
+
+4. Instalar dependencias:
+
+       pip install -r requirements.txt
+
+   Esto tardará 2-5 minutos. Espera a que termine.
+
+
+PASO 4: VERIFICAR INSTALACION
+==============================
+
+Aún con venv activado, ejecuta:
+
+    python test_setup.py
+
+Debes ver:
+    [OK] GROQ_API_KEY configurada
+    [OK] PDF encontrado
+    [OK] langchain
+    [OK] langchain_groq
+    ... (más [OK])
+
+Si ves [ERROR], lee la sección de solución de problemas.
+
+
+PASO 5: EJECUTAR EL AGENTE
+===========================
+
+Con venv activado, ejecuta:
+
+    python dgsp_agent.py
+
+Debes ver algo como:
+
+    ============================================================
+    INICIALIZANDO AGENTE DGSP HERMOSILLO
+    ============================================================
+    
+    [SETUP] Inicializando modelo de embeddings...
+    [OK] Embeddings cargados correctamente
+    
+    [LOAD] Cargando vector store desde: ./faiss_index
+    [OK] Vector store cargado
+    
+    [SETUP] Inicializando modelo Llama 3.1 8B Instant (Groq)...
+    [OK] Agente inicializado correctamente
+    
+    ============================================================
+    CHATBOT DGSP HERMOSILLO
+    Escribe 'salir' para terminar
+    Escribe 'historial' para ver la conversación
+    ============================================================
+
+¡LISTO! Ahora puedes hacer preguntas.
+
+
+PROBLEMAS Y SOLUCIONES
+======================
+
+PROBLEMA 1: "ModuleNotFoundError: No module named 'langchain'"
+
+Causa: Dependencias no instaladas correctamente
+
+Solución:
+    1. Verifica que venv está activado (debe decir "(venv)" al inicio)
+    2. Desactiva venv: deactivate
+    3. Elimina venv: rm -rf venv (Linux/Mac) o rmdir /s venv (Windows)
+    4. Crea venv nuevo: python -m venv venv
+    5. Activa venv
+    6. Instala de nuevo: pip install -r requirements.txt
+    7. Intenta: python test_setup.py
+
+
+PROBLEMA 2: "ERROR: Could not find a version that satisfies the requirement"
+
+Causa: Versiones de paquetes no compatibles
+
+Solución:
+    1. Asegúrate de tener requirements.txt ACTUALIZADO
+    2. Actualiza pip: python -m pip install --upgrade pip
+    3. Prueba con: pip install --upgrade langchain langchain-groq
+    4. Si sigue fallando, contacta soporte
+
+
+PROBLEMA 3: "GROQ_API_KEY not configured"
+
+Causa: .env no existe o está mal configurado
+
+Solución:
+    1. Verifica que existe .env en la raíz
+    2. Abre con editor de texto
+    3. Debe tener: GROQ_API_KEY=tu_clave_real
+    4. Sin espacios alrededor del =
+    5. Sin "tu_clave_api_aqui" (reemplaza con real)
+    6. Guarda el archivo
+    7. Cierra y abre terminal de nuevo
+    8. Intenta de nuevo
+
+
+PROBLEMA 4: "PDF not found: ./manual_dgsp.pdf"
+
+Causa: El PDF no está en la carpeta correcta
+
+Solución:
+    1. Verifica que manual_dgsp.pdf existe en raíz:
+       ls -la *.pdf  (Linux/Mac)
+       dir *.pdf     (Windows)
+    2. Si no existe, cópialo:
+       cp /ruta/del/pdf ./manual_dgsp.pdf
+    3. Intenta de nuevo
+
+
+PROBLEMA 5: "Connection refused" o timeout al conectar con Groq
+
+Causa: Problema de internet o API key inválida
+
+Solución:
+    1. Verifica conexión a internet
+    2. Verifica que puedes acceder a https://console.groq.com
+    3. Ve a console.groq.com y verifica tu API key
+    4. Si cambió, actualiza .env
+    5. Verifica que no hay espacios en blanco en .env
+    6. Intenta de nuevo
+
+
+PROBLEMA 6: "venv is not recognized" (Windows)
+
+Causa: PowerShell tiene políticas de ejecución
+
+Solución:
+    1. Abre PowerShell como administrador
+    2. Ejecuta: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+    3. Responde: Y
+    4. Ahora intenta activar venv: .\venv\Scripts\Activate.ps1
+
+
+PROBLEMA 7: El agente es muy lento
+
+Causa: Primera ejecución, está creando índices
+
+Solución:
+    1. Primera ejecución: 1-2 minutos (normal)
+    2. Siguientes ejecuciones: 2-4 segundos (rápido)
+    3. Si sigue lento después, verifica que tienes 2GB+ RAM libre
+
+
+PROBLEMA 8: "Permission denied" en run.sh
+
+Causa: Script no tiene permisos de ejecución
+
+Solución:
+    chmod +x run.sh
+    bash run.sh
+
+
+VERIFICACION RAPIDA SIN INSTALAR
+=================================
+
+Quieres probar sin instalar? Ejecuta desde Python interactivo:
+
+    python
+    >>> import langchain
+    >>> import langchain_groq
+    >>> import faiss
+    >>> print("Todo OK!")
+    >>> exit()
+
+Si todos los imports funcionan, las dependencias están OK.
+
+
+USANDO CON ENTORNO EXISTENTE
+=============================
+
+Si ya tienes Python con dependencias:
+
+    1. Copia los archivos .py
+    2. Copia manual_dgsp.pdf
+    3. Copia .env y configura clave
+    4. Ejecuta: python dgsp_agent.py
+
+No necesitas venv si ya tienes las dependencias.
+
+
+USAR SIN INSTALAR (SOLO LECTURA)
+=================================
+
+Si quieres solo leer el código sin ejecutar:
+
+    1. Abre cualquier archivo .py con editor
+    2. Lee los comentarios
+    3. Entiende la arquitectura
+    4. Adapta para tu caso
+
+Los archivos están bien documentados.
+
+
+RESUMEN DE COMANDOS
+====================
+
+Crear venv:
+    python -m venv venv
+
+Activar venv (Linux/Mac):
+    source venv/bin/activate
+
+Activar venv (Windows CMD):
+    venv\Scripts\activate
+
+Activar venv (Windows PowerShell):
+    .\venv\Scripts\Activate.ps1
+
+Instalar dependencias:
+    pip install -r requirements.txt
+
+Verificar instalación:
+    python test_setup.py
+
+Ejecutar agente:
+    python dgsp_agent.py
+
+Desactivar venv:
+    deactivate
+
+Eliminar venv:
+    rm -rf venv (Linux/Mac)
+    rmdir /s venv (Windows)
+
+
+REQUISITOS MINIMOS
+==================
+
+Hardware:
+- CPU: Cualquiera (Intel, AMD, M1/M2)
+- RAM: 2 GB mínimo (4 GB recomendado)
+- Almacenamiento: 500 MB libre
+
+Software:
+- Python 3.10+
+- pip (incluido con Python)
+- Terminal/PowerShell
+
+Internet:
+- Para descarga de dependencias: Sí
+- Para ejecutar: Solo para conectar con Groq API
+
+Sistema operativo:
+- Linux (Ubuntu, Debian, Fedora, etc.)
+- Mac (Intel o Apple Silicon)
+- Windows (7, 8, 10, 11)
+
+
+SOPORTE
+=======
+
+Si aún tienes problemas:
+
+1. Verifica que completaste TODOS los pasos
+2. Lee test_setup.py output línea por línea
+3. Copia el error exacto en una búsqueda
+4. Revisa COMO_EMPEZAR.txt sección "Problemas comunes"
+
+¡Listo! Ya estás listo para ejecutar el agente.
