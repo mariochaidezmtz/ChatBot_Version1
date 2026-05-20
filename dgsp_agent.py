@@ -5,6 +5,7 @@ Objetivo: Usar solo la documentación local sin conectarse a internet
 
 import os
 from typing import Optional
+from datetime import datetime
 from dotenv import load_dotenv
 
 from langchain_groq import ChatGroq
@@ -363,8 +364,11 @@ def main():
     # Ruta del PDF (IMPORTANTE: reemplaza con tu ruta)
     PDF_PATH = "./manual_dgsp.pdf"  # Cambia esto a tu ruta
     
-    # Crear agente
-    agent = DGSPAgent(pdf_path=PDF_PATH, session_id="sesion_demo_001")
+    # Generar session_id único basado en timestamp
+    session_id = f"sesion_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    # Crear agente con session_id único
+    agent = DGSPAgent(pdf_path=PDF_PATH, session_id=session_id)
     
     print("\n" + "="*60)
     print("CHATBOT DGSP HERMOSILLO")
@@ -377,8 +381,8 @@ def main():
     # Palabras clave de despedida
     farewell_keywords = ['salir', 'adios', 'adiós', 'bye', 'stop', 'terminar']
     
-    while True:
-        try:
+    try:
+        while True:
             # Obtener input del usuario y limpiar
             question = input("Tú: ").strip().lower()
             
@@ -403,15 +407,18 @@ def main():
             # Hacer pregunta (el historial se mantiene automáticamente)
             agent.ask(question)
             
-        except KeyboardInterrupt:
-            print("\n\n" + "="*60)
-            print("Gracias por consultar el Chatbot de la Jefatura de")
-            print("Policía Preventiva y Tránsito Municipal de Hermosillo.")
-            print("¡Cuídate y ten un excelente día!")
-            print("="*60 + "\n")
-            break
-        except Exception as e:
-            print(f"Error: {e}")
+    except KeyboardInterrupt:
+        print("\n\n" + "="*60)
+        print("Gracias por consultar el Chatbot de la Jefatura de")
+        print("Policía Preventiva y Tránsito Municipal de Hermosillo.")
+        print("¡Cuídate y ten un excelente día!")
+        print("="*60 + "\n")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        # Eliminar la sesión al finalizar
+        agent.memory.delete_session(session_id)
+        print(f"[INFO] Sesión {session_id} eliminada.")
 
 
 if __name__ == "__main__":
