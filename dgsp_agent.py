@@ -24,7 +24,7 @@ load_dotenv()
 
 
 class DGSPAgent:
-    def __init__(self, pdf_path: str, session_id: str = "default"):
+    def __init__(self, document_paths, session_id: str = "default"):
         """
         Inicializa el agente
         
@@ -33,7 +33,9 @@ class DGSPAgent:
             session_id: ID de la sesión actual
         """
         self.session_id = session_id
-        self.pdf_path = pdf_path
+        if isinstance(document_paths, str):
+            document_paths = [document_paths]
+        self.document_paths = document_paths
         
         print("\n" + "="*60)
         print("INICIALIZANDO AGENTE DGSP HERMOSILLO")
