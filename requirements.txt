@@ -8,3 +8,4 @@ pypdf
 sentence-transformers
 groq
 pathlib
+python-docx
