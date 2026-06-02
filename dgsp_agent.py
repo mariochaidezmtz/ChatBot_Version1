@@ -368,7 +368,7 @@ def main():
     # Ruta del PDF (IMPORTANTE: reemplaza con tu ruta)
     DOCUMENT_PATHS = [
     "./manual_dgsp.pdf",
-    # "./otro_documento.pdf",
+    "./ley-de-transito-del-estado-de-sonora.pdf",
     # "./reglamento.txt",
     # "./procedimientos.docx",
 ]
