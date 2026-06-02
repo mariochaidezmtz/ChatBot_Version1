@@ -24,7 +24,7 @@ load_dotenv()
 
 
 class DGSPAgent:
-    def __init__(self, pdf_path: str, session_id: str = "default"):
+    def __init__(self, document_paths, session_id: str = "default"):
         """
         Inicializa el agente
         
@@ -33,7 +33,9 @@ class DGSPAgent:
             session_id: ID de la sesión actual
         """
         self.session_id = session_id
-        self.pdf_path = pdf_path
+        if isinstance(document_paths, str):
+            document_paths = [document_paths]
+        self.document_paths = document_paths
         
         print("\n" + "="*60)
         print("INICIALIZANDO AGENTE DGSP HERMOSILLO")
@@ -67,7 +69,7 @@ class DGSPAgent:
             # Si no existe, crea uno nuevo
             print("\n[PROCESS] Vector store no encontrado, creando nuevo...")
             try:
-                documents = prepare_documents(self.pdf_path)
+                documents = prepare_documents(self.document_paths)
                 self.vector_store_manager.create_vector_store(documents)
                 self.vector_store_manager.save_vector_store()
             except Exception as e:
@@ -185,15 +187,17 @@ class DGSPAgent:
         """Crea el agente con prompt personalizado"""
         
         # Prompt del sistema personalizado
-        system_prompt = """Eres un asistente experto sobre la Dirección General de Seguridad 
-Pública (DGSP) / Jefatura de Policía Preventiva y Tránsito Municipal de Hermosillo, Sonora.
+        system_prompt = """
+        
+Eres un asistente experto que responde únicamente con base en los
+documentos oficiales que se te han proporcionado.
 
 INSTRUCCIONES CRÍTICAS:
-1. SOLO responde basándote en la documentación del manual disponible
-2. SI no encuentras la información en el manual, dilo claramente
+1. SOLO responde basándote en la documentación disponible
+2. SI no encuentras la información, dilo claramente
 3. NUNCA hagas suposiciones ni inventes información
 4. Cita siempre de dónde obtuviste la información
-5. Si la pregunta está fuera del ámbito del manual, explica que no está documentado
+5. Si la pregunta está fuera del ámbito de los documentos, explica que no está documentado
 6. Sé conciso y útil en tus respuestas
 
 MANEJO DEL HISTORIAL DE CONVERSACIÓN:
@@ -362,13 +366,18 @@ def main():
     """Función principal - ejemplo de uso interactivo"""
     
     # Ruta del PDF (IMPORTANTE: reemplaza con tu ruta)
-    PDF_PATH = "./manual_dgsp.pdf"  # Cambia esto a tu ruta
+    DOCUMENT_PATHS = [
+    "./manual_dgsp.pdf",
+    "./ley-de-transito-del-estado-de-sonora.pdf",
+    # "./reglamento.txt",
+    # "./procedimientos.docx",
+]
     
     # Generar session_id único basado en timestamp
     session_id = f"sesion_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
     # Crear agente con session_id único
-    agent = DGSPAgent(pdf_path=PDF_PATH, session_id=session_id)
+    agent = DGSPAgent(document_paths=DOCUMENT_PATHS, session_id=session_id)
     
     print("\n" + "="*60)
     print("CHATBOT DGSP HERMOSILLO")
