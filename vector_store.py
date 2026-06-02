@@ -3,7 +3,7 @@ Módulo para crear y gestionar el vector store usando FAISS
 Objetivo: Permite buscar similitud en el manual sin conectarse a internet
 """
 
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from typing import List
@@ -29,11 +29,24 @@ class VectorStoreManager:
         """Inicializa el modelo de embeddings"""
         print("[SETUP] Inicializando modelo de embeddings (HuggingFace)...")
         try:
-            self.embeddings = HuggingFaceEmbeddings(
-                model_name="sentence-transformers/all-MiniLM-L6-v2",
-                model_kwargs={"device": "cpu"}
-            )
-            print("[OK] Embeddings cargados correctamente")
+            # Obtener HF_TOKEN si está configurado
+            hf_token = os.getenv("HF_TOKEN")
+            
+            # Configurar embeddings con o sin token
+            if hf_token:
+                self.embeddings = HuggingFaceEmbeddings(
+                    model_name="sentence-transformers/all-MiniLM-L6-v2",
+                    model_kwargs={"device": "cpu"},
+                    encode_kwargs={"normalize_embeddings": True}
+                )
+                print("[OK] Embeddings cargados correctamente (autenticado)")
+            else:
+                self.embeddings = HuggingFaceEmbeddings(
+                    model_name="sentence-transformers/all-MiniLM-L6-v2",
+                    model_kwargs={"device": "cpu"},
+                    encode_kwargs={"normalize_embeddings": True}
+                )
+                print("[OK] Embeddings cargados correctamente (sin autenticación)")
         except Exception as e:
             print(f"[ERROR] Error al cargar embeddings: {e}")
             raise
@@ -102,7 +115,7 @@ class VectorStoreManager:
             Lista de documentos más similares
         """
         if self.vector_store is None:
-            print("❌ Vector store no cargado")
+            print("[ERROR] Vector store no cargado")
             return []
         
         results = self.vector_store.similarity_search(query, k=k)
@@ -119,7 +132,7 @@ class VectorStoreManager:
             Retriever object
         """
         if self.vector_store is None:
-            print("❌ Vector store no cargado")
+            print("[ERROR] Vector store no cargado")
             return None
         
         return self.vector_store.as_retriever(search_kwargs={"k": k})
