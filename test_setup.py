@@ -23,25 +23,42 @@ if os.path.exists(".env"):
 else:
     print("   [ERROR] Archivo .env no encontrado")
 
-# 2. Verificar PDF
-print("\n2. Verificando archivo PDF...")
-pdf_path = "./manual_dgsp.pdf"
-if os.path.exists(pdf_path):
-    size_mb = os.path.getsize(pdf_path) / (1024*1024)
-    print(f"   [OK] PDF encontrado ({size_mb:.2f} MB)")
-else:
-    print(f"   [ERROR] PDF no encontrado en: {pdf_path}")
-    print(f"      Debes colocar tu manual aquí")
+# 2. Verificar documentos
+print("\n2. Verificando documentos...")
+DOCUMENT_PATHS = [
+    "./manual_dgsp.pdf",
+    # Agrega más rutas aquí si tienes más documentos
+]
+SUPPORTED_EXTENSIONS = (".pdf", ".txt", ".md", ".docx")
 
+any_found = False
+for doc_path in DOCUMENT_PATHS:
+    if os.path.exists(doc_path):
+        size_mb = os.path.getsize(doc_path) / (1024*1024)
+        ext = os.path.splitext(doc_path)[1].lower()
+        if ext in SUPPORTED_EXTENSIONS:
+            print(f" [OK] {doc_path} ({size_mb:.2f} MB)")
+        else:
+            print(f" [WARNING] {doc_path} - formato no soportado ({ext})")
+        any_found = True
+    else:
+        print(f" [ERROR] No encontrado: {doc_path}")
+
+if not any_found:
+    print(" Debes agregar al menos un documento en DOCUMENT_PATHS")
 # 3. Verificar dependencias
 print("\n3. Verificando dependencias...")
 required_packages = [
     "langchain",
-    "langchain_groq",
     "langchain_community",
+    "langchain_groq",
     "faiss",
+    "dotenv",
+    "pydantic",
     "pypdf",
-    "dotenv"
+    "sentence_transformers",
+    "groq",
+    "docx",
 ]
 
 missing = []
@@ -70,14 +87,14 @@ print("\n" + "="*60)
 print("RESUMEN")
 print("="*60)
 
-if not missing and os.path.exists(pdf_path) and os.getenv("GROQ_API_KEY"):
+if not missing and any_found and os.getenv("GROQ_API_KEY"):
     print("[OK] TODO LISTO - Puedes ejecutar: python dgsp_agent.py")
 else:
     print("[WARNING] FALTAN PASOS:")
     if missing:
         print(f"   - Instalar: pip install {' '.join(missing)}")
-    if not os.path.exists(pdf_path):
-        print(f"   - Agregar PDF en: {pdf_path}")
+    if not any_found:
+        print(f"   - Agregar al menos un documento en DOCUMENT_PATHS")
     if not os.getenv("GROQ_API_KEY"):
         print(f"   - Configurar GROQ_API_KEY en .env")
 
