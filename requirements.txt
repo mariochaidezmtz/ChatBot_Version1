@@ -7,3 +7,4 @@ pydantic
 pypdf
 sentence-transformers
 groq
+pathlib
