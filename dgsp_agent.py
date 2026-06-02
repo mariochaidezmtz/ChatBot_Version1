@@ -24,18 +24,16 @@ load_dotenv()
 
 
 class DGSPAgent:
-    def __init__(self, document_paths, session_id: str = "default"):
+    def __init__(self, documents_path: str = None, session_id: str = "default"):
         """
         Inicializa el agente
         
         Args:
-            pdf_path: Ruta del archivo PDF del manual
+            documents_path: Ruta del archivo PDF, carpeta con documentos, o None para escanear ./documents
             session_id: ID de la sesión actual
         """
         self.session_id = session_id
-        if isinstance(document_paths, str):
-            document_paths = [document_paths]
-        self.document_paths = document_paths
+        self.documents_path = documents_path
         
         print("\n" + "="*60)
         print("INICIALIZANDO AGENTE DGSP HERMOSILLO")
@@ -69,7 +67,15 @@ class DGSPAgent:
             # Si no existe, crea uno nuevo
             print("\n[PROCESS] Vector store no encontrado, creando nuevo...")
             try:
-                documents = prepare_documents(self.document_paths)
+                # Usar escaneo dinámico si documents_path es None o una carpeta
+                if self.documents_path is None or os.path.isdir(self.documents_path):
+                    documents = prepare_documents(directory=self.documents_path)
+                else:
+                    documents = prepare_documents(paths=self.documents_path)
+                
+                if not documents:
+                    raise ValueError("[ERROR] No se encontraron documentos para procesar")
+                
                 self.vector_store_manager.create_vector_store(documents)
                 self.vector_store_manager.save_vector_store()
             except Exception as e:
@@ -94,30 +100,31 @@ class DGSPAgent:
         """Crea las herramientas disponibles para el agente"""
         
         # Esquema Pydantic para los argumentos de la herramienta
-        class SearchManualInput(BaseModel):
-            """Esquema de entrada para la herramienta de búsqueda en el manual"""
+        class SearchDocumentsInput(BaseModel):
+            """Esquema de entrada para la herramienta de búsqueda en documentos institucionales"""
             query: str = Field(
-                description="Pregunta clara o tema específico para buscar en el manual de organización de la DGSP. Ejemplos: 'organigrama', 'funciones de la comisaría general', 'procedimientos de audiencia'"
+                description="La consulta o palabra clave para buscar en los documentos de la policía de Hermosillo. Ejemplos: 'organigrama', 'Tu voz en QR', 'funciones de la comisaría general', 'procedimientos de audiencia', 'ley de tránsito', 'justicia cívica', 'multas', 'proyectos institucionales'"
             )
         
-        def search_manual(query: str) -> str:
+        def search_documents(query: str) -> str:
             """
-            Busca información en el manual de organización de la DGSP.
+            Busca información en los documentos institucionales de la Jefatura de Policía.
             
-            Esta herramienta permite buscar información específica sobre la estructura,
-            departamentos, funciones, responsabilidades, procedimientos, horarios y
-            cualquier otra información documentada en el manual de la Jefatura de
-            Policía Preventiva y Tránsito Municipal de Hermosillo.
+            Esta herramienta permite buscar información específica sobre estructura,
+            departamentos, funciones, responsabilidades, procedimientos, horarios,
+            leyes de tránsito, justicia cívica, multas y cualquier otra información
+            documentada en los documentos oficiales de la Jefatura de Policía Preventiva
+            y Tránsito Municipal de Hermosillo.
             
             Args:
-                query: Pregunta clara o tema específico para buscar en el manual
+                query: Pregunta clara o tema específico para buscar en los documentos
                 
             Returns:
-                Información relevante del manual con indicadores de relevancia
+                Información relevante de los documentos con indicadores de relevancia
             """
             # Verificar que el vector store esté cargado
             if self.vector_store_manager.vector_store is None:
-                error_msg = "[ERROR] El vector store no está inicializado. No se puede buscar en el manual."
+                error_msg = "[ERROR] El vector store no está inicializado. No se puede buscar en los documentos."
                 print(error_msg)
                 return error_msg
             
@@ -125,7 +132,7 @@ class DGSPAgent:
                 results = self.vector_store_manager.similarity_search(query, k=3)
                 
                 if not results:
-                    return "No se encontró información relacionada en el manual."
+                    return "No se encontró información relacionada en los documentos institucionales."
                 
                 context = "\n---\n".join([
                     f"[RELEVANCIA: {100-(i*25)}%]\n{doc.page_content}"
@@ -134,28 +141,41 @@ class DGSPAgent:
                 
                 return context
             except Exception as e:
-                error_msg = f"[ERROR] Error al buscar en el manual: {str(e)}"
+                error_msg = f"[ERROR] Error al buscar en los documentos: {str(e)}"
                 print(error_msg)
                 return error_msg
         
         tools = [
             Tool(
-                name="search_manual",
-                func=search_manual,
+                name="buscar_documentos_policia",
+                func=search_documents,
                 description="""
-                Busca información en el manual de organización de la DGSP (Jefatura de Policía Preventiva y Tránsito Municipal de Hermosillo).
+                Busca cualquier información oficial, legal o institucional de la Policía de Hermosillo.
                 
-                Usa esta herramienta cuando el usuario pregunte sobre:
+                Esta herramienta tiene acceso a TODOS los documentos oficiales de la dependencia:
+                - Manual de Organización de la DGSP
+                - Ley de Tránsito y reglamentos viales
+                - Reglamentos de Justicia Cívica
+                - Proyectos institucionales como "Tu voz en QR"
+                - Normas sobre multas y sanciones
+                - Procedimientos y trámites ciudadanos
+                - Cualquier otro documento oficial de la corporación
+                
+                USA ESTA HERRAMIENTA SIEMPRE que el usuario pregunte sobre:
                 - Estructura organizacional y organigrama
                 - Funciones y responsabilidades de departamentos
-                - Procedimientos y procesos internos
+                - Leyes de tránsito y reglamentos viales
+                - Justicia cívica y procedimientos administrativos
+                - Multas, sanciones y procedimientos de infracción
+                - Trámites ciudadanos y procedimientos
                 - Horarios y operaciones
                 - Normas y regulaciones
-                - Cualquier información documentada en el manual oficial
+                - Proyectos institucionales y tecnológicos
+                - Cualquier información documentada en los archivos oficiales
                 
-                Input: pregunta clara o tema específico relacionado con la DGSP
+                Input: pregunta clara o tema específico relacionado con la Policía de Hermosillo
                 """,
-                args_schema=SearchManualInput
+                args_schema=SearchDocumentsInput
             ),
         ]
         
@@ -189,28 +209,42 @@ class DGSPAgent:
         # Prompt del sistema personalizado
         system_prompt = """
         
-Eres un asistente experto que responde únicamente con base en los
-documentos oficiales que se te han proporcionado.
+Eres el Asistente Inteligente Oficial de la Jefatura de Policía Preventiva y de Tránsito de Hermosillo, Sonora.
+
+TU OBJETIVO:
+Resolver dudas de la ciudadanía sobre trámites, leyes de tránsito, justicia cívica, multas, estructuras de la dependencia y proyectos tecnológicos de la corporación como "Tu voz en QR".
+
+DOCUMENTOS DISPONIBLES:
+Tienes acceso a un repositorio documental oficial que incluye:
+- Manual de Organización de la DGSP
+- Ley de Tránsito y reglamentos viales
+- Reglamentos de Justicia Cívica
+- Proyectos institucionales como "Tu voz en QR"
+- Normas sobre multas y sanciones
+- Procedimientos y trámites ciudadanos
+- Cualquier otro documento oficial de la corporación
 
 INSTRUCCIONES CRÍTICAS:
-1. SOLO responde basándote en la documentación disponible
-2. SI no encuentras la información, dilo claramente
-3. NUNCA hagas suposiciones ni inventes información
-4. Cita siempre de dónde obtuviste la información
-5. Si la pregunta está fuera del ámbito de los documentos, explica que no está documentado
-6. Sé conciso y útil en tus respuestas
+1. CUENTAS CON UNA HERRAMIENTA DE BÚSQUEDA para consultar el repositorio documental oficial
+2. ÚSALA SIEMPRE que necesites verificar datos precisos antes de responder
+3. SOLO responde basándote en la documentación disponible en los documentos institucionales
+4. SI no encuentras la información en los documentos, dilo claramente
+5. NUNCA hagas suposiciones ni inventes información
+6. Cita siempre de dónde obtuviste la información (ley de tránsito, manual de organización, proyecto "Tu voz en QR", etc.)
+7. Si la pregunta está fuera del ámbito de los documentos, explica que no está documentado
+8. Sé conciso y útil en tus respuestas
 
 MANEJO DEL HISTORIAL DE CONVERSACIÓN:
 - El historial de conversación contiene preguntas y respuestas anteriores
 - Si el usuario hace una pregunta ambigua o de seguimiento (ej: "repite por favor", "¿y eso?"), 
   usa el contexto del historial para entender a qué se refiere
 - Si la pregunta no tiene contexto claro, responde basándote en la información más reciente del historial
-- NO intentes buscar en el manual preguntas que son solo de seguimiento o repetición
+- NO intentes buscar en los documentos preguntas que son solo de seguimiento o repetición
 
 CONTEXTO PREVIO:
 {context}
 
-Cuando el usuario pregunte, busca primero en el manual y luego responde con precisión.
+Cuando el usuario pregunte, usa la herramienta de búsqueda para consultar los documentos institucionales y luego responde con precisión.
 """
         
         prompt = ChatPromptTemplate.from_messages([
@@ -365,19 +399,18 @@ Cuando el usuario pregunte, busca primero en el manual y luego responde con prec
 def main():
     """Función principal - ejemplo de uso interactivo"""
     
-    # Ruta del PDF (IMPORTANTE: reemplaza con tu ruta)
-    DOCUMENT_PATHS = [
-    "./manual_dgsp.pdf",
-    "./ley-de-transito-del-estado-de-sonora.pdf",
-    # "./reglamento.txt",
-    # "./procedimientos.docx",
-]
+    # Ruta de los documentos (puede ser una carpeta o None para escanear ./documents)
+    # Para escaneo automático, usa None o especifica la carpeta "./documents"
+    DOCUMENTS_PATH = None  # Escaneará automáticamente la carpeta ./documents
+    
+    # Alternativamente, puedes especificar archivos específicos:
+    # DOCUMENTS_PATH = ["./manual_dgsp.pdf", "./ley-de-transito-del-estado-de-sonora.pdf"]
     
     # Generar session_id único basado en timestamp
     session_id = f"sesion_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
     # Crear agente con session_id único
-    agent = DGSPAgent(document_paths=DOCUMENT_PATHS, session_id=session_id)
+    agent = DGSPAgent(documents_path=DOCUMENTS_PATH, session_id=session_id)
     
     print("\n" + "="*60)
     print("CHATBOT DGSP HERMOSILLO")

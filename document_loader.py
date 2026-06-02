@@ -1,12 +1,14 @@
 """
-Módulo para cargar y procesar documentos PDF
-Objetivo: Extraer texto del manual y dividirlo en chunks manejables
+Módulo para cargar y procesar documentos múltiples
+Objetivo: Extraer texto de múltiples documentos y dividirlos en chunks manejables
+Soporta: PDF, TXT, MD, DOCX
 """
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from typing import List
 from langchain_core.documents import Document
 from pathlib import Path
+import os
 
 
 class DocumentProcessor:
@@ -95,27 +97,83 @@ class DocumentProcessor:
         return documents
 
 
-def prepare_documents(paths) -> List[Document]:
+def scan_documents_directory(directory: str = "./documents", extensions: List[str] = None) -> List[str]:
+    """
+    Escanea dinámicamente una carpeta buscando archivos de documentos.
+    
+    Args:
+        directory: Ruta de la carpeta a escanear
+        extensions: Lista de extensiones a buscar (default: ['.pdf', '.txt', '.md', '.docx'])
+    
+    Returns:
+        Lista de rutas de archivos encontrados
+    """
+    if extensions is None:
+        extensions = ['.pdf', '.txt', '.md', '.docx']
+    
+    directory_path = Path(directory)
+    
+    if not directory_path.exists():
+        print(f"[WARNING] Directorio no encontrado: {directory}")
+        return []
+    
+    found_files = []
+    
+    for ext in extensions:
+        # Buscar archivos con la extensión especificada
+        for file_path in directory_path.glob(f"*{ext}"):
+            found_files.append(str(file_path))
+    
+    # También buscar en subdirectorios recursivamente
+    for ext in extensions:
+        for file_path in directory_path.rglob(f"*{ext}"):
+            if str(file_path) not in found_files:
+                found_files.append(str(file_path))
+    
+    print(f"[INFO] Archivos encontrados en {directory}: {len(found_files)}")
+    for file_path in found_files:
+        print(f"   - {Path(file_path).name}")
+    
+    return found_files
+
+
+def prepare_documents(paths=None, directory: str = None) -> List[Document]:
     """
     Carga y procesa uno o varios documentos.
     
     Args:
-        paths: str (un solo archivo) o list (varios archivos)
+        paths: str (un solo archivo), list (varios archivos), o None para usar escaneo de directorio
+        directory: Ruta del directorio a escanear si paths es None
     
     Returns:
         Lista de documentos procesados y divididos
     """
+    processor = DocumentProcessor(chunk_size=1000, chunk_overlap=200)
+    all_documents = []
+    
+    # Si no se proporcionan paths, escanear directorio
+    if paths is None:
+        if directory is None:
+            directory = "./documents"
+        paths = scan_documents_directory(directory)
+        
+        if not paths:
+            print("[WARNING] No se encontraron documentos para procesar")
+            return []
+    
+    # Convertir a lista si es un solo path
     if isinstance(paths, str):
         paths = [paths]
 
-    processor = DocumentProcessor(chunk_size=1000, chunk_overlap=200)
-    all_documents = []
-
     for file_path in paths:
-        text = processor.load_file(file_path)
-        source_name = Path(file_path).name
-        docs = processor.split_into_chunks(text, source=source_name)
-        all_documents.extend(docs)
+        try:
+            text = processor.load_file(file_path)
+            source_name = Path(file_path).name
+            docs = processor.split_into_chunks(text, source=source_name)
+            all_documents.extend(docs)
+        except Exception as e:
+            print(f"[ERROR] Error procesando {file_path}: {e}")
+            continue
 
     print(f"[INFO] Total de chunks generados: {len(all_documents)}")
     return all_documents
