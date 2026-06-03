@@ -122,6 +122,10 @@ class DGSPAgent:
             Returns:
                 Información relevante de los documentos con indicadores de relevancia
             """
+            # DIAGNÓSTICO HIPÓTESIS 4: Verificar argumentos Pydantic
+            print(f"[DEBUG TOOL] search_documents llamada con query: {query}")
+            print(f"[DEBUG TOOL] Tipo de query: {type(query)}")
+            
             # Verificar que el vector store esté cargado
             if self.vector_store_manager.vector_store is None:
                 error_msg = "[ERROR] El vector store no está inicializado. No se puede buscar en los documentos."
@@ -208,11 +212,10 @@ class DGSPAgent:
         
         # Prompt del sistema personalizado
         system_prompt = """
-        
-Eres el Asistente Inteligente Oficial de la Jefatura de Policía Preventiva y de Tránsito de Hermosillo, Sonora.
+Eres el Asistente de la Jefatura de Policía Preventiva y de Tránsito de Hermosillo.
 
-TU OBJETIVO:
-Resolver dudas de la ciudadanía sobre trámites, leyes de tránsito, justicia cívica, multas, estructuras de la dependencia y proyectos tecnológicos de la corporación como "Tu voz en QR".
+TU FUNCIÓN:
+Responder preguntas sobre trámites, leyes de tránsito, justicia cívica, multas, estructura y proyectos institucionales.
 
 DOCUMENTOS DISPONIBLES:
 Tienes acceso a un repositorio documental oficial que incluye:
@@ -221,32 +224,22 @@ Tienes acceso a un repositorio documental oficial que incluye:
 - Reglamentos de Justicia Cívica
 - Proyectos institucionales como "Tu voz en QR"
 - Normas sobre multas y sanciones
-- Procedimientos y trámites ciudadanos
-- Cualquier otro documento oficial de la corporación
+- Procedimientos ciudadanos
 
-INSTRUCCIONES CRÍTICAS:
-1. CUENTAS CON UNA HERRAMIENTA DE BÚSQUEDA para consultar el repositorio documental oficial
-2. ÚSALA SIEMPRE que necesites verificar datos precisos antes de responder
-3. SOLO responde basándote en la documentación disponible en los documentos institucionales
-4. SI no encuentras la información en los documentos, dilo claramente
-5. NUNCA hagas suposiciones ni inventes información
-6. NUNCA le digas al usuario que consulte el manual o los documentos — TÚ eres quien los consulta y le das la respuesta directa
-7. Si encontraste la información en los documentos, preséntala directamente sin mencionar de dónde viene a menos que sea relevante
-8. Si la pregunta está fuera del ámbito de los documentos, explica que no está documentado
-9. Sé conciso y útil en tus respuestas
+INSTRUCCIONES ESTRICTAS:
 
-MANEJO DEL HISTORIAL DE CONVERSACIÓN:
-- El historial de conversación contiene preguntas y respuestas anteriores
-- Si el usuario hace una pregunta ambigua o de seguimiento (ej: "repite por favor", "¿y eso?"), 
-  usa el contexto del historial para entender a qué se refiere
-- Si la pregunta no tiene contexto claro, responde basándote en la información más reciente del historial
-- NO intentes buscar en los documentos preguntas que son solo de seguimiento o repetición
+1. USA LA HERRAMIENTA DE BÚSQUEDA siempre para verificar datos
+2. RESPONDE SOLO con información de los documentos
+3. Cuando necesites buscar información, tienes total libertad de generar los pensamientos internos necesarios (Tool Calls) en el formato técnico que requiere el sistema. No limites tu razonamiento interno.
+4. Tu RESPUESTA FINAL al ciudadano debe ser directa, concisa, sin introducciones largas ni conclusiones con advertencias legales o disclaimers (como 'consulte a un profesional'). Si usas listas, sé breve y usa negritas.
+5. Si NO encuentras información: responde en UNA sola oración: "No encontré registro de esa información en los documentos oficiales de la corporación."
+6. NUNCA digas al usuario que consulte documentos — TÚ das la respuesta directa
+7. NUNCA inventes información ni hagas suposiciones
 
 CONTEXTO PREVIO:
 {context}
 
-Cuando el usuario pregunte, USA SIEMPRE la herramienta de búsqueda, extrae la información y respóndele directamente al usuario. 
-JAMÁS le digas que consulte el manual, los documentos o cualquier otra fuente — tú eres el asistente y debes darle la respuesta completa."""
+Pregunta del usuario: usa la herramienta de búsqueda, genera el razonamiento interno necesario, y entrega la respuesta final directa al ciudadano."""
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
@@ -313,6 +306,10 @@ JAMÁS le digas que consulte el manual, los documentos o cualquier otra fuente �
         """
         print(f"\n[USER] {question}")
         
+        # DIAGNÓSTICO HIPÓTESIS 1: Verificar input recibido
+        print(f"[DEBUG AGENT] Input recibido en ask(): {question}")
+        print(f"[DEBUG AGENT] Tipo de dato: {type(question)}")
+        
         # Detectar si es una pregunta de seguimiento
         if self._is_followup_question(question):
             # Obtener la última respuesta del historial
@@ -338,9 +335,15 @@ JAMÁS le digas que consulte el manual, los documentos o cualquier otra fuente �
         
         # Ejecutar agente
         try:
-            # Obtener historial y convertirlo al formato de LangChain
+            # DIAGNÓSTICO HIPÓTESIS 2: Verificar historial de chat
             raw_history = self.memory.get_session_history(self.session_id, limit=5)
+            print(f"[DEBUG AGENT] Historial raw: {raw_history}")
             langchain_history = self._convert_history_to_langchain_format(raw_history)
+            print(f"[DEBUG AGENT] Historial LangChain: {langchain_history}")
+            
+            # DIAGNÓSTICO HIPÓTESIS 3: Verificar System Prompt
+            print(f"[DEBUG AGENT] AgentExecutor inicializado: {self.agent}")
+            print(f"[DEBUG AGENT] Tools disponibles: {[tool.name for tool in self.agent.tools]}")
             
             response = self.agent.invoke({
                 "input": question,

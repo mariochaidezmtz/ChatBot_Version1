@@ -17,6 +17,11 @@ def chat():
     data = request.get_json()
     user_message = data.get("message", "").strip()
 
+    # DIAGNÓSTICO HIPÓTESIS 1: Formato del mensaje entrante
+    print(f"\n[DEBUG API] Input recibido del frontend: {user_message}")
+    print(f"[DEBUG API] Tipo de dato: {type(user_message)}")
+    print(f"[DEBUG API] Data completa recibida: {data}")
+
     if not user_message:
         return jsonify({"response": "Mensaje vacío."}), 400
 
