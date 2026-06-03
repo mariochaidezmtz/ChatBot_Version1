@@ -1,4 +1,16 @@
 # Created by venv; see https://docs.python.org/3/library/venv.html
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Base de datos y índices
+agent_memory.db
+faiss_index/
+
+# Variables de entorno
 .env
-.venv
-__pycache__
+
+# Frontend
+frontend/node_modules/
+frontend/.next/

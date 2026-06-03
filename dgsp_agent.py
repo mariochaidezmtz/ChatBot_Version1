@@ -88,12 +88,12 @@ class DGSPAgent:
         if not api_key:
             raise ValueError("[ERROR] GROQ_API_KEY no está configurada en .env")
         
-        print("[SETUP] Inicializando modelo Llama 3.1 8B Instant (Groq)...")
+        print("[SETUP] Inicializando modelo llama-3.1-8b-instant (Groq)...")
         return ChatGroq(
             api_key=api_key,
             model_name="llama-3.1-8b-instant",
             temperature=0.3,  # Bajo para respuestas más precisas
-            max_tokens=1024
+            max_tokens=2048
         )
     
     def _create_tools(self) -> list:
@@ -230,9 +230,10 @@ INSTRUCCIONES CRÍTICAS:
 3. SOLO responde basándote en la documentación disponible en los documentos institucionales
 4. SI no encuentras la información en los documentos, dilo claramente
 5. NUNCA hagas suposiciones ni inventes información
-6. Cita siempre de dónde obtuviste la información (ley de tránsito, manual de organización, proyecto "Tu voz en QR", etc.)
-7. Si la pregunta está fuera del ámbito de los documentos, explica que no está documentado
-8. Sé conciso y útil en tus respuestas
+6. NUNCA le digas al usuario que consulte el manual o los documentos — TÚ eres quien los consulta y le das la respuesta directa
+7. Si encontraste la información en los documentos, preséntala directamente sin mencionar de dónde viene a menos que sea relevante
+8. Si la pregunta está fuera del ámbito de los documentos, explica que no está documentado
+9. Sé conciso y útil en tus respuestas
 
 MANEJO DEL HISTORIAL DE CONVERSACIÓN:
 - El historial de conversación contiene preguntas y respuestas anteriores
@@ -244,8 +245,8 @@ MANEJO DEL HISTORIAL DE CONVERSACIÓN:
 CONTEXTO PREVIO:
 {context}
 
-Cuando el usuario pregunte, usa la herramienta de búsqueda para consultar los documentos institucionales y luego responde con precisión.
-"""
+Cuando el usuario pregunte, USA SIEMPRE la herramienta de búsqueda, extrae la información y respóndele directamente al usuario. 
+JAMÁS le digas que consulte el manual, los documentos o cualquier otra fuente — tú eres el asistente y debes darle la respuesta completa."""
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
@@ -265,7 +266,7 @@ Cuando el usuario pregunte, usa la herramienta de búsqueda para consultar los d
             agent=agent,
             tools=self.tools,
             verbose=True,
-            max_iterations=3,
+            max_iterations=10,
             handle_parsing_errors=True
         )
         

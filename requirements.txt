@@ -10,3 +10,5 @@ sentence-transformers
 groq
 pathlib
 python-docx
+flask
+flask-cors

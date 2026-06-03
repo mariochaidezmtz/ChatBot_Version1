@@ -1,0 +1,41 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from dgsp_agent import DGSPAgent
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app = Flask(__name__)
+CORS(app)
+
+# Inicializa el agente una sola vez al arrancar el servidor
+# None = escanea automáticamente la carpeta ./documents
+agent = DGSPAgent(documents_path=None, session_id="web_session")
+
+@app.route("/api/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+    user_message = data.get("message", "").strip()
+
+    if not user_message:
+        return jsonify({"response": "Mensaje vacío."}), 400
+
+    try:
+        response = agent.ask(user_message)
+        return jsonify({"response": response})
+    except Exception as e:
+        print(f"[ERROR] {e}")
+        return jsonify({"response": "Error interno del servidor."}), 500
+
+@app.route("/api/reset", methods=["POST"])
+def reset():
+    try:
+        agent.memory.delete_session("web_session")
+        agent.memory.create_session("web_session")
+        return jsonify({"ok": True})
+    except Exception as e:
+        print(f"[ERROR] {e}")
+        return jsonify({"ok": False}), 500
+
+if __name__ == "__main__":
+    app.run(port=3000, debug=False)
