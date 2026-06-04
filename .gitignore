@@ -1,5 +1,91 @@
-# Created by venv; see https://docs.python.org/3/library/venv.html
+# ==============================================================================
+# 1. PYTHON (Backend & RAG)
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Entornos virtuales
+.venv/
+venv/
+ENV/
+env/
+
+# ==============================================================================
+# 2. NODE / JAVASCRIPT / TYPESCRIPT (Frontend)
+# ==============================================================================
+node_modules/
+.pnpm-store/
+.npm/
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Salidas de construcción (Build outputs)
+.next/
+out/
+dist/
+.cache/
+.parcel-cache/
+.turbo/
+
+# Editor e IDEs de Frontend
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# ==============================================================================
+# 3. BASE DE DATOS, VECTORES Y PERSISTENCIA (Locales)
+# ==============================================================================
+# Base de datos de memoria persistente de LangChain / SQLite
+agent_memory.db
+*.db
+*.sqlite3
+
+
+# ==============================================================================
+# 4. CONFIGURACIONES Y SECRETOS (¡NUNCA SUBIR!)
+# ==============================================================================
 .env
-.venv
-__pycache__
-frontend
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+
+# ==============================================================================
+# 5. SISTEMA OPERATIVO Y EDITORES
+# ==============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
