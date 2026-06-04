@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 from langchain_groq import ChatGroq
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.tools import Tool
+from langchain_core.tools import Tool, tool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 from pydantic import BaseModel, Field
@@ -19,8 +19,8 @@ from document_loader import prepare_documents
 from vector_store import VectorStoreManager
 from memory import ConversationMemory
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno desde el directorio padre (raíz del proyecto)
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 
 class DGSPAgent:
@@ -98,87 +98,60 @@ class DGSPAgent:
     
     def _create_tools(self) -> list:
         """Crea las herramientas disponibles para el agente"""
-        
+
         # Esquema Pydantic para los argumentos de la herramienta
-        class SearchDocumentsInput(BaseModel):
+        class QueryInput(BaseModel):
             """Esquema de entrada para la herramienta de búsqueda en documentos institucionales"""
             query: str = Field(
-                description="La consulta o palabra clave para buscar en los documentos de la policía de Hermosillo. Ejemplos: 'organigrama', 'Tu voz en QR', 'funciones de la comisaría general', 'procedimientos de audiencia', 'ley de tránsito', 'justicia cívica', 'multas', 'proyectos institucionales'"
+                description="Texto limpio con palabras clave para buscar en el repositorio de la policía de Hermosillo."
             )
-        
-        def search_documents(query: str) -> str:
-            """
-            Busca información en los documentos institucionales de la Jefatura de Policía.
-            
-            Esta herramienta permite buscar información específica sobre estructura,
-            departamentos, funciones, responsabilidades, procedimientos, horarios,
-            leyes de tránsito, justicia cívica, multas y cualquier otra información
-            documentada en los documentos oficiales de la Jefatura de Policía Preventiva
-            y Tránsito Municipal de Hermosillo.
-            
-            Args:
-                query: Pregunta clara o tema específico para buscar en los documentos
-                
-            Returns:
-                Información relevante de los documentos con indicadores de relevancia
-            """
+
+        @tool("buscar_documentos_policia", args_schema=QueryInput)
+        def buscar_documentos_policia(query: str) -> str:
+            """Usa esta herramienta para consultar información oficial sobre leyes de tránsito, justicia cívica, multas, manuales y proyectos de la Policía de Hermosillo."""
+            # Asegura limpiar cualquier comilla rebelde que mande el LLM
+            query_limpia = str(query).replace('"', '').replace("'", "").strip()
+
+            # Limpieza adicional del query para remover muletillas y caracteres problemáticos
+            import re
+            query_limpia = query_limpia.strip()
+            # Remover muletillas comunes al inicio
+            muletillas = ['oye', 'hey', 'hola', 'buenos días', 'buenas tardes', 'buenas noches', 'disculpa', 'perdón']
+            for muletilla in muletillas:
+                if query_limpia.lower().startswith(muletilla.lower()):
+                    query_limpia = query_limpia[len(muletilla):].strip()
+                    if query_limpia.startswith(','):
+                        query_limpia = query_limpia[1:].strip()
+                    if query_limpia.startswith(','):
+                        query_limpia = query_limpia[1:].strip()
+            # Remover caracteres de puntuación excesivos al inicio/final
+            query_limpia = re.sub(r'^[¿¡\?,.\s]+', '', query_limpia)
+            query_limpia = re.sub(r'[¿¡\?,.\s]+$', '', query_limpia)
+
             # Verificar que el vector store esté cargado
             if self.vector_store_manager.vector_store is None:
                 error_msg = "[ERROR] El vector store no está inicializado. No se puede buscar en los documentos."
                 print(error_msg)
                 return error_msg
-            
+
             try:
-                results = self.vector_store_manager.similarity_search(query, k=3)
-                
+                results = self.vector_store_manager.similarity_search(query_limpia, k=5)
+
                 if not results:
                     return "No se encontró información relacionada en los documentos institucionales."
-                
+
                 context = "\n---\n".join([
-                    f"[RELEVANCIA: {100-(i*25)}%]\n{doc.page_content}"
+                    f"[RELEVANCIA: {100-(i*20)}%]\n{doc.page_content}"
                     for i, doc in enumerate(results)
                 ])
-                
+
                 return context
             except Exception as e:
                 error_msg = f"[ERROR] Error al buscar en los documentos: {str(e)}"
                 print(error_msg)
                 return error_msg
-        
-        tools = [
-            Tool(
-                name="buscar_documentos_policia",
-                func=search_documents,
-                description="""
-                Busca cualquier información oficial, legal o institucional de la Policía de Hermosillo.
-                
-                Esta herramienta tiene acceso a TODOS los documentos oficiales de la dependencia:
-                - Manual de Organización de la DGSP
-                - Ley de Tránsito y reglamentos viales
-                - Reglamentos de Justicia Cívica
-                - Proyectos institucionales como "Tu voz en QR"
-                - Normas sobre multas y sanciones
-                - Procedimientos y trámites ciudadanos
-                - Cualquier otro documento oficial de la corporación
-                
-                USA ESTA HERRAMIENTA SIEMPRE que el usuario pregunte sobre:
-                - Estructura organizacional y organigrama
-                - Funciones y responsabilidades de departamentos
-                - Leyes de tránsito y reglamentos viales
-                - Justicia cívica y procedimientos administrativos
-                - Multas, sanciones y procedimientos de infracción
-                - Trámites ciudadanos y procedimientos
-                - Horarios y operaciones
-                - Normas y regulaciones
-                - Proyectos institucionales y tecnológicos
-                - Cualquier información documentada en los archivos oficiales
-                
-                Input: pregunta clara o tema específico relacionado con la Policía de Hermosillo
-                """,
-                args_schema=SearchDocumentsInput
-            ),
-        ]
-        
+
+        tools = [buscar_documentos_policia]
         return tools
     
     def _convert_history_to_langchain_format(self, history: list) -> list:
@@ -226,13 +199,16 @@ Tienes acceso a un repositorio documental oficial que incluye:
 
 INSTRUCCIONES CRÍTICAS:
 1. CUENTAS CON UNA HERRAMIENTA DE BÚSQUEDA para consultar el repositorio documental oficial
-2. ÚSALA SIEMPRE que necesites verificar datos precisos antes de responder
-3. SOLO responde basándote en la documentación disponible en los documentos institucionales
-4. SI no encuentras la información en los documentos, dilo claramente
-5. NUNCA hagas suposiciones ni inventes información
-6. Cita siempre de dónde obtuviste la información (ley de tránsito, manual de organización, proyecto "Tu voz en QR", etc.)
-7. Si la pregunta está fuera del ámbito de los documentos, explica que no está documentado
-8. Sé conciso y útil en tus respuestas
+2. Usa tu herramienta de búsqueda `buscar_documentos_policia` ÚNICAMENTE cuando la pregunta del usuario involucre de manera explícita leyes, reglamentos, multas, la organización interna o proyectos como 'Tu voz en QR'
+3. Si el usuario te saluda de forma casual (ej. 'hola', 'buenos días', 'qué tal'), despide la conversación ('gracias', 'adiós') o hace charla informal que no requiere datos específicos, responde de forma natural, breve y cortés como el asistente de la Policía de Hermosillo, sin intentar usar la herramienta de búsqueda
+4. CUANDO USES LA HERRAMIENTA DE BÚSQUEDA, extrae ÚNICAMENTE las palabras clave esenciales de la duda del usuario para el parámetro de búsqueda. Por ejemplo, si el usuario dice 'oye me multaron y no puedo pagar la multa, ¿qué hago?', debes invocar la herramienta usando únicamente un término limpio como query='procedimiento pago multas' o 'no puedo pagar multa'. NUNCA pases frases conversacionales completas, muletillas ('oye', 'hola') ni caracteres de puntuación complejos al argumento de la función.
+5. ANÁLISIS EXHAUSTIVO DE DOCUMENTOS: Cuando utilices la herramienta de búsqueda, recibirás fragmentos de múltiples documentos oficiales (Bando de Tránsito, Manual de Organización, Leyes, etc.). Si notas que los primeros fragmentos recuperados de un documento específico NO contienen una respuesta clara, contundente o exacta a la duda del usuario, NO te rindas diciendo que no hay información en ese manual. Tienes la obligación estricta de revisar y contrastar todos los demás fragmentos de los OTROS documentos adjuntos en el contexto de la herramienta para encontrar la respuesta correcta (como el Bando de Tránsito). Consolida la información buscando siempre dar la respuesta más útil y legal para el ciudadano.
+6. SOLO responde basándote en la documentación disponible en los documentos institucionales para preguntas técnicas
+7. SI tras usar la herramienta el dato exacto no existe en los documentos, indica de forma breve que no encontraste registro oficial de ese tema
+8. NUNCA hagas suposiciones ni inventes información
+9. Cita siempre de dónde obtuviste la información (ley de tránsito, manual de organización, proyecto "Tu voz en QR", etc.)
+10. Si la pregunta está fuera del ámbito de los documentos, explica que no está documentado
+11. Sé conciso y útil en tus respuestas
 
 MANEJO DEL HISTORIAL DE CONVERSACIÓN:
 - El historial de conversación contiene preguntas y respuestas anteriores
@@ -338,7 +314,8 @@ Cuando el usuario pregunte, usa la herramienta de búsqueda para consultar los d
         # Ejecutar agente
         try:
             # Obtener historial y convertirlo al formato de LangChain
-            raw_history = self.memory.get_session_history(self.session_id, limit=5)
+            # Limitar a últimos 3 mensajes para evitar sesgo de repetición
+            raw_history = self.memory.get_session_history(self.session_id, limit=3)
             langchain_history = self._convert_history_to_langchain_format(raw_history)
             
             response = self.agent.invoke({
