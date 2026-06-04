@@ -314,7 +314,8 @@ Cuando el usuario pregunte, usa la herramienta de búsqueda para consultar los d
         # Ejecutar agente
         try:
             # Obtener historial y convertirlo al formato de LangChain
-            raw_history = self.memory.get_session_history(self.session_id, limit=5)
+            # Limitar a últimos 3 mensajes para evitar sesgo de repetición
+            raw_history = self.memory.get_session_history(self.session_id, limit=3)
             langchain_history = self._convert_history_to_langchain_format(raw_history)
             
             response = self.agent.invoke({

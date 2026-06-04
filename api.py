@@ -16,6 +16,10 @@ agent = DGSPAgent(documents_path=None, session_id="web_session")
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
+    # Inicialización explícita de variables para evitar persistencia entre peticiones
+    user_message = ""
+    response = ""
+
     data = request.get_json()
     user_message = data.get("message", "").strip()
 
@@ -30,7 +34,9 @@ def chat():
     try:
         # PRUEBA DE AISLAMIENTO: Forzar ejecución limpia sin historial
         # Pasar use_history=False para ignorar memoria intermedia
+        print(f"[DEBUG EXECUTE] Invocando agente con input: '{user_message}'")
         response = agent.ask(user_message, use_history=False)
+        print(f"[DEBUG EXECUTE] Respuesta del agente: '{response[:100]}...'")  # Primeros 100 chars
         return jsonify({"response": response})
     except Exception as e:
         print(f"[ERROR] {e}")
