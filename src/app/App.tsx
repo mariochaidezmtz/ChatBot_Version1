@@ -124,16 +124,39 @@ export default function App() {
     }
   };
 
-  const handleResetChat = () => {
-    setMessages([
-      {
-        id: '1',
-        text: '¡Bienvenido al asistente virtual de la Jefatura de Policía Preventiva y Tránsito Municipal de Hermosillo! ¿En qué puedo ayudarte hoy?',
-        sender: 'bot',
-        timestamp: new Date()
-      }
-    ]);
-    setInputValue('');
+  const handleResetChat = async () => {
+    try {
+      // Llamar al endpoint de reset del backend
+      await fetch('http://localhost:3000/api/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Limpiar mensajes localmente y mostrar mensaje de bienvenida
+      setMessages([
+        {
+          id: '1',
+          text: '¡Bienvenido al asistente virtual de la Jefatura de Policía Preventiva y Tránsito Municipal de Hermosillo! ¿En qué puedo ayudarte hoy?',
+          sender: 'bot',
+          timestamp: new Date()
+        }
+      ]);
+      setInputValue('');
+    } catch (error) {
+      console.error('Error al reiniciar la conversación:', error);
+      // Aún limpiar los mensajes localmente aunque falle el backend
+      setMessages([
+        {
+          id: '1',
+          text: '¡Bienvenido al asistente virtual de la Jefatura de Policía Preventiva y Tránsito Municipal de Hermosillo! ¿En qué puedo ayudarte hoy?',
+          sender: 'bot',
+          timestamp: new Date()
+        }
+      ]);
+      setInputValue('');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
