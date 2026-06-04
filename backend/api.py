@@ -3,8 +3,10 @@ from flask_cors import CORS
 from dgsp_agent import DGSPAgent
 from dotenv import load_dotenv
 from datetime import datetime
+import os
 
-load_dotenv()
+# Cargar .env desde el directorio padre (raíz del proyecto)
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = Flask(__name__)
 CORS(app)

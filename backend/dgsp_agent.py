@@ -19,8 +19,8 @@ from document_loader import prepare_documents
 from vector_store import VectorStoreManager
 from memory import ConversationMemory
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno desde el directorio padre (raíz del proyecto)
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 
 class DGSPAgent:

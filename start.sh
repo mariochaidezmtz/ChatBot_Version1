@@ -27,17 +27,17 @@ source venv/bin/activate
 # Instalar dependencias si es necesario
 if ! python -c "import langchain" 2>/dev/null; then
     echo "[SETUP] Instalando dependencias..."
-    pip install -q -r requirements.txt
+    pip install -q -r backend/requirements.txt
 fi
 
 # Ejecutar test
 echo ""
 echo "[TEST] Ejecutando test de configuración..."
-python test_setup.py
+python backend/test_setup.py
 
 echo ""
 echo "[STARTING] Iniciando agente..."
 echo ""
 
 # Ejecutar agente
-python dgsp_agent.py
+python backend/dgsp_agent.py

@@ -53,7 +53,7 @@ pip install --upgrade pip --quiet
 echo "[SETUP] Instalando dependencias..."
 echo "[INFO] Esto puede tomar 2-5 minutos en primera ejecución..."
 
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 
 if [ $? -eq 0 ]; then
     echo "[OK] Dependencias instaladas"
@@ -65,7 +65,7 @@ fi
 # Ejecutar test
 echo ""
 echo "[TEST] Ejecutando verificación..."
-python test_setup.py
+python backend/test_setup.py
 
 if [ $? -ne 0 ]; then
     echo "[WARNING] Algunos checks fallaron, pero continuando..."
@@ -76,4 +76,4 @@ echo "[STARTING] Iniciando agente..."
 echo ""
 
 # Ejecutar agente
-python dgsp_agent.py
+python backend/dgsp_agent.py
